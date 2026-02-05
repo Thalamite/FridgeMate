@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FridgeMate - Smart Refrigerator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FDF6F0;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+
+        .scale-up { transition: transform 0.2s ease; }
+        .scale-up:active { transform: scale(0.95); }
+        
+        @keyframes spin-slow {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin-slow { animation: spin-slow 10s linear infinite; }
+    </style>
+</head>
+<body class="p-4 md:p-10 text-gray-800">
+
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-16 gap-8">
+            <div class="text-center md:text-left">
+                <h1 class="text-5xl md:text-7xl font-black text-[#A7C7E7] flex items-center gap-5 tracking-tighter drop-shadow-sm">
+                    <i class="fa-solid fa-refrigerator"></i> FRIDGEMATE
+                </h1>
+                <p class="text-gray-400 font-black ml-1 uppercase tracking-[0.3em] text-[10px] mt-2 opacity-80">World-Class Professional Kitchen Hub</p>
+            </div>
+            <button onclick="openResetModal()" class="flex items-center gap-3 px-8 py-4 bg-white rounded-3xl shadow-sm border-2 border-gray-100 text-gray-400 hover:text-red-500 hover:border-red-100 transition-all font-black text-xs uppercase tracking-[0.2em] group">
+                <i class="fa-solid fa-rotate-right group-hover:rotate-180 transition-transform duration-500"></i> Reset Statistics
+            </button>
+        </header>
+
+        <!-- Stats Dashboard -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-16">
+            <div class="bg-white p-8 rounded-[3rem] shadow-xl border-b-[10px] border-green-100">
+                <i class="fa-solid fa-trophy text-green-500 text-3xl mb-6"></i>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Items Consumed</p>
+                <p id="stat-eaten" class="text-5xl font-black text-green-600 tracking-tighter">0</p>
+            </div>
+            <div class="bg-white p-8 rounded-[3rem] shadow-xl border-b-[10px] border-red-100">
+                <i class="fa-solid fa-circle-xmark text-red-500 text-3xl mb-6"></i>
+                <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">Waste Generated</p>
+                <p id="stat-waste" class="text-5xl font-black text-red-600 tracking-tighter">0</p>
+            </div>
+            <div class="md:col-span-2 bg-[#A7C7E7] p-10 rounded-[4rem] shadow-2xl text-white flex items-center justify-between relative overflow-hidden group">
+                <div class="relative z-10">
+                    <p class="text-xs font-black opacity-80 uppercase tracking-[0.3em] mb-2">Sustainable Score</p>
+                    <p id="stat-score" class="text-7xl font-black tracking-tighter">0%</p>
+                    <div class="flex items-center gap-3 mt-6 bg-white/25 px-5 py-2.5 rounded-2xl w-fit backdrop-blur-md border border-white/20 text-[10px] font-black uppercase tracking-widest">
+                        <i class="fa-solid fa-bolt text-yellow-300"></i> Zero Waste Master
+                    </div>
+                </div>
+                <div class="relative z-10 bg-white/10 p-6 rounded-full border border-white/20 backdrop-blur-sm">
+                    <i class="fa-solid fa-globe text-5xl animate-spin-slow"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid lg:grid-cols-3 gap-12">
+            <!-- Left Panel -->
+            <div class="lg:col-span-1 space-y-10">
+                <!-- Add Item Form -->
+                <div class="bg-white p-10 rounded-[4rem] shadow-2xl border-4 border-indigo-50/50">
+                    <h2 class="text-3xl font-black text-gray-700 mb-8 flex items-center gap-4">
+                        <div class="bg-indigo-100 p-3 rounded-2xl text-indigo-500"><i class="fa-solid fa-plus"></i></div> Stock Update
+                    </h2>
+                    <div class="space-y-6">
+                        <div>
+                            <label class="text-[11px] font-black text-gray-400 ml-3 uppercase tracking-widest">Ingredient Name</label>
+                            <input id="input-name" type="text" placeholder="เช่น เนื้อวากิว, ผัก..." class="w-full px-7 py-4 rounded-[2rem] bg-gray-50 border-4 border-transparent focus:border-indigo-100 outline-none font-black">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-[11px] font-black text-gray-400 ml-3 uppercase tracking-widest">Expiry</label>
+                                <input id="input-expiry" type="date" class="w-full px-6 py-4 rounded-[2rem] bg-gray-50 border-4 border-transparent focus:border-indigo-100 outline-none font-black">
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-black text-gray-400 ml-3 uppercase tracking-widest">Zone</label>
+                                <select id="input-zone" class="w-full px-6 py-4 rounded-[2rem] bg-gray-50 border-4 border-transparent focus:border-indigo-100 outline-none font-black appearance-none">
+                                    <option value="normal">Chill Zone</option>
+                                    <option value="freezer">Freezer</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button onclick="addItem()" class="w-full bg-[#A7C7E7] text-white font-black py-5 rounded-[2.5rem] shadow-xl hover:bg-indigo-400 transition-all scale-up uppercase tracking-widest">Add to Fridge</button>
+                    </div>
+                </div>
+
+                <!-- AI Chef -->
+                <div class="bg-[#FFD1DC] p-10 rounded-[4rem] shadow-2xl border-4 border-pink-50 relative overflow-hidden">
+                    <h2 class="text-3xl font-black text-pink-700 mb-8 flex items-center gap-4 relative z-10"><i class="fa-solid fa-utensils"></i> AI CHEF</h2>
+                    
+                    <div class="flex bg-white/40 p-2 rounded-[2rem] gap-2 mb-8 relative z-10 backdrop-blur-sm">
+                        <button id="type-savory" onclick="setMenuType('savory')" class="flex-1 py-3 rounded-[1.5rem] font-black text-[10px] uppercase bg-pink-500 text-white shadow-lg">Savory</button>
+                        <button id="type-sweet" onclick="setMenuType('sweet')" class="flex-1 py-3 rounded-[1.5rem] font-black text-[10px] uppercase text-pink-400">Sweet</button>
+                    </div>
+
+                    <button onclick="generateMenu()" id="chef-btn" class="w-full bg-white text-pink-700 font-black py-5 rounded-[2.5rem] shadow-xl scale-up flex items-center justify-center gap-3 relative z-10">
+                        <i class="fa-solid fa-sparkles text-pink-400"></i> คิดเมนูจากของใกล้หมดอายุ
+                    </button>
+
+                    <div id="chef-result" class="mt-8 hidden animate-in zoom-in duration-300 relative z-10">
+                        <div class="bg-white/95 p-8 rounded-[3rem] border-2 border-pink-100 shadow-xl">
+                            <div id="result-cuisine" class="bg-indigo-50 text-indigo-600 text-[9px] font-black px-4 py-1.5 rounded-full uppercase mb-4 inline-block tracking-widest">THAI CUISINE</div>
+                            <p id="result-text" class="text-pink-950 font-black text-xl leading-tight"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fridge UI -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-[5rem] shadow-2xl border-[20px] md:border-[24px] border-[#A7C7E7] relative">
+                <div class="absolute right-8 md:right-14 top-[15%] w-4 md:w-6 h-80 bg-gray-200 rounded-full shadow-inner z-10"></div>
+                <div class="flex flex-col h-full gap-6 p-2 md:p-4">
+                    <!-- Freezer -->
+                    <div class="flex-1 bg-[#E0F2F1] rounded-[3rem] p-6 shadow-inner border-4 border-white/50 min-h-[300px] overflow-y-auto custom-scrollbar">
+                        <div class="flex justify-between mb-6">
+                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="fa-solid fa-snowflake mr-2"></i> FREEZER</span>
+                        </div>
+                        <div id="list-freezer" class="space-y-3"></div>
+                    </div>
+                    <!-- Chiller -->
+                    <div class="flex-1 bg-[#FFF9C4] rounded-[3rem] p-6 shadow-inner border-4 border-white/50 min-h-[300px] overflow-y-auto custom-scrollbar">
+                        <div class="flex justify-between mb-6">
+                            <span class="text-[10px] font-black text-gray-500 uppercase tracking-widest"><i class="fa-solid fa-refrigerator mr-2"></i> CHILLER</span>
+                        </div>
+                        <div id="list-normal" class="space-y-3"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset Modal -->
+    <div id="reset-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-md p-6">
+        <div class="bg-white w-full max-w-sm rounded-[3.5rem] p-12 text-center border-4 border-white shadow-2xl">
+            <div class="text-red-500 text-6xl mb-6"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <h3 class="text-2xl font-black mb-2">ล้างสถิติทั้งหมด?</h3>
+            <p class="text-gray-400 text-sm mb-10 font-bold">ข้อมูลรายการอาหารจะหายไปทั้งหมด</p>
+            <div class="space-y-3">
+                <button onclick="confirmReset()" class="w-full bg-red-500 text-white font-black py-5 rounded-[2rem] shadow-lg shadow-red-100">ยืนยัน</button>
+                <button onclick="closeResetModal()" class="w-full bg-gray-100 text-gray-400 font-black py-5 rounded-[2rem]">ยกเลิก</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+      // State
+      let items = JSON.parse(localStorage.getItem('fridgeItems')) || [];
+      let stats = JSON.parse(localStorage.getItem('fridgeStats')) || { eaten: 0, waste: 0 };
+      let currentCategory = 'meat';
+      let currentMenuType = 'savory';
+  
+      const GLOBAL_RECIPES = {
+          savory: {
+              THAI: ["แกงเขียวหวาน {meat} ใส่ {veg}", "ผัดกะเพรา {meat} กับ {veg}", "ต้มยำ {meat} รสเด็ด", "พะแนง {meat} ใส่ {veg}"],
+              JAPANESE: ["Katsudon {meat} กับ {egg}", "Teriyaki {meat} เคียง {veg}", "Ramen ซุปเข้มข้นใส่ {meat}"],
+              WESTERN: ["Steak {meat} เสิร์ฟคู่ {veg}", "Pasta Carbonara ใส่ {egg} และ {meat}", "BBQ {meat} ย่าง {veg}"]
+          },
+          sweet: {
+              WORLD: ["Soufflé เนื้อนุ่มจาก {egg}", "พุดดิ้งคัสตาร์ดหอมมันจาก {egg}", "ผลไม้เชื่อม {veg} ไอศกรีม", "เครปคัสตาร์ด {egg}"]
+          }
+      };
+  
+      function selectCategory(cat) {
+          currentCategory = cat;
+          document.querySelectorAll('.cat-btn').forEach(btn => {
+              btn.classList.replace('bg-indigo-50', 'bg-gray-50');
+              btn.classList.replace('border-indigo-400', 'border-transparent');
+              btn.classList.replace('text-indigo-500', 'text-gray-300');
+          });
+          // FIX: Added backticks and quotes
+          const active = document.querySelector(`[data-cat="${cat}"]`);
+          active.classList.replace('bg-gray-50', 'bg-indigo-50');
+          active.classList.replace('border-transparent', 'border-indigo-400');
+          active.classList.replace('text-gray-300', 'text-indigo-500');
+      }
+  
+      function setMenuType(type) {
+          currentMenuType = type;
+          const sBtn = document.getElementById('type-savory');
+          const dBtn = document.getElementById('type-sweet');
+          if(type === 'savory') {
+              sBtn.className = "flex-1 py-3 rounded-[1.5rem] font-black text-[10px] uppercase bg-pink-500 text-white shadow-lg";
+              dBtn.className = "flex-1 py-3 rounded-[1.5rem] font-black text-[10px] uppercase text-pink-400";
+          } else {
+              dBtn.className = "flex-1 py-3 rounded-[1.5rem] font-black text-[10px] uppercase bg-pink-500 text-white shadow-lg";
+              sBtn.className = "flex-1 py-3 rounded-[1.5rem] font-black text-[10px] uppercase text-pink-400";
+          }
+      }
+  
+      function addItem() {
+          const name = document.getElementById('input-name').value;
+          const expiry = document.getElementById('input-expiry').value;
+          const zone = document.getElementById('input-zone').value;
+          
+          if(!name || !expiry) return;
+  
+          items.push({ id: Date.now(), name, expiry, zone, category: currentCategory, checked: false });
+          saveAndRender();
+          document.getElementById('input-name').value = '';
+      }
+  
+      function toggleItem(id) {
+          const item = items.find(i => i.id === id);
+          if(!item) return;
+  
+          item.checked = !item.checked;
+          const days = getDaysDiff(item.expiry);
+          
+          if(item.checked) {
+              if(days >= 0) stats.eaten++;
+              else stats.waste++;
+          } else {
+              if(days >= 0) stats.eaten--;
+              else stats.waste--;
+          }
+          saveAndRender();
+      }
+  
+      function removeItem(id) {
+          items = items.filter(i => i.id !== id);
+          saveAndRender();
+      }
+  
+      function getDaysDiff(dateStr) {
+          const today = new Date(); today.setHours(0,0,0,0);
+          const expDate = new Date(dateStr); expDate.setHours(0,0,0,0);
+          const diff = expDate - today;
+          return Math.ceil(diff / (1000 * 60 * 60 * 24));
+      }
+  
+      function saveAndRender() {
+          localStorage.setItem('fridgeItems', JSON.stringify(items));
+          localStorage.setItem('fridgeStats', JSON.stringify(stats));
+          render();
+      }
+  
+      function render() {
+          document.getElementById('stat-eaten').innerText = stats.eaten;
+          document.getElementById('stat-waste').innerText = stats.waste;
+          const total = stats.eaten + stats.waste;
+          const score = total === 0 ? 0 : Math.round((stats.eaten / total) * 100);
+          document.getElementById('stat-score').innerText = score + '%';
+  
+          ['normal', 'freezer'].forEach(zone => {
+              // FIX: Added backticks
+              const list = document.getElementById(`list-${zone}`);
+              list.innerHTML = '';
+              items.filter(i => i.zone === zone).forEach(item => {
+                  const days = getDaysDiff(item.expiry);
+                  const urgency = days < 0 ? 'expired' : days <= 3 ? 'urgent' : 'safe';
+                  const urgencyColor = urgency === 'expired' ? 'text-red-500 bg-red-50' : urgency === 'urgent' ? 'text-orange-500 bg-orange-50' : 'text-blue-500 bg-blue-50';
+                  
+                  const div = document.createElement('div');
+                  // FIX: Added backticks
+                  div.className = `flex items-center justify-between p-4 bg-white rounded-3xl shadow-sm ${item.checked ? 'opacity-40 grayscale' : ''}`;
+                  div.innerHTML = `
+                      <div class="flex items-center gap-4">
+                          <button onclick="toggleItem(${item.id})" class="w-8 h-8 rounded-xl border-2 flex items-center justify-center ${item.checked ? 'bg-indigo-500 border-indigo-500' : 'border-gray-200'}">
+                              ${item.checked ? '<i class="fa-solid fa-check text-white text-xs"></i>' : ''}
+                          </button>
+                          <div>
+                              <div class="font-black text-sm text-gray-700">${item.name}</div>
+                              <div class="text-[9px] font-black px-2 py-0.5 rounded-lg border mt-1 inline-block ${urgencyColor}">
+                                  ${days < 0 ? 'หมดอายุ' : 'เหลือ ' + days + ' ว.'}
+                              </div>
+                          </div>
+                      </div>
+                      <button onclick="removeItem(${item.id})" class="text-gray-200 hover:text-red-400 p-2"><i class="fa-solid fa-trash-can"></i></button>
+                  `;
+                  list.appendChild(div);
+              });
+          });
+      }
+  
+      async function generateMenu() {
+          const active = items.filter(i => !i.checked);
+          if(active.length === 0) {
+              alert("ใส่ของในตู้เย็นก่อนให้เชฟช่วยคิดนะ!");
+              return;
+          }
+  
+          const btn = document.getElementById('chef-btn');
+          btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Studying Recipes...';
+          
+          await new Promise(r => setTimeout(r, 1500));
+          
+          const meat = active.find(i => i.category === 'meat') || {name: 'เนื้อสัตว์'};
+          const veg = active.find(i => i.category === 'veg') || {name: 'ผัก'};
+          const egg = active.find(i => i.category === 'egg') || {name: 'ไข่/นม'};
+  
+          let template = "";
+          let cuisine = "WORLDWIDE";
+  
+          if(currentMenuType === 'savory') {
+              const cats = Object.keys(GLOBAL_RECIPES.savory);
+              cuisine = cats[Math.floor(Math.random() * cats.length)];
+              const list = GLOBAL_RECIPES.savory[cuisine];
+              template = list[Math.floor(Math.random() * list.length)];
+          } else {
+              cuisine = "DESSERT";
+              const list = GLOBAL_RECIPES.sweet.WORLD;
+              template = list[Math.floor(Math.random() * list.length)];
+          }
+  
+          const result = template
+              .replace('{meat}', meat.name)
+              .replace('{veg}', veg.name)
+              .replace('{egg}', egg.name);
+  
+          document.getElementById('result-cuisine').innerText = cuisine + " CUISINE";
+          document.getElementById('result-text').innerText = result;
+          document.getElementById('chef-result').classList.remove('hidden');
+          btn.innerHTML = '<i class="fa-solid fa-sparkles text-pink-400"></i> คิดเมนูจากของใกล้หมดอายุ';
+      }
+  
+      function openResetModal() { document.getElementById('reset-modal').classList.remove('hidden'); }
+      function closeResetModal() { document.getElementById('reset-modal').classList.add('hidden'); }
+      function confirmReset() {
+          items = [];
+          stats = { eaten: 0, waste: 0 };
+          saveAndRender();
+          closeResetModal();
+          document.getElementById('chef-result').classList.add('hidden');
+      }
+
+    render();
+  </script>
+</body>
+</html>
